@@ -67,6 +67,48 @@ cluster_spread <- function(x, y, heat, centroids, map){
 	average
 }
 
+distance_between_clusters<-function(map, coords, centroids, umat){
+	cluster_elements<-list_clusters(map,coords,centroids,umat)
+	print(length(cluster_elements))
+
+}
+list_clusters<-function(map,coords,centroids,umat){
+	cent_x <- centroids$xvals
+	cent_y <- centroids$yvals
+	componentx <- coords$x
+	componenty <- coords$y
+	cluster_list <- list()
+	for(i in 1:length(centroids)){
+		cx <- cent_x[i]
+		cy <- cent_y[i]
+		cluster_list[i] <- list_from_centroid(cx,cy,coords,umat)
+	}
+ cluster_list
+}
+
+list_from_centroid <- function(x, y, components, heat){
+	centroidx <- x
+	centroidy <- y
+	sum <- 0
+	xdim <- map$xdim
+	ydim <- map$ydim
+	centroid_weight <- heat[centroidx,centroidy]
+	cluster_list<-c()
+	for(xi in 1:xdim){
+		for(yi in 1:ydim){
+			cx <- components$x[xi,yi]
+			cy <- components$y[xi,yi]
+
+			if(cx == centroidx && cy == centroidy){
+				cweight <- heat[xi,yi]
+				cluster_list <- c(cluster_list,cweight)
+			}
+		}
+	}
+	
+	list(cluster_list)
+}
+
 
 data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
@@ -81,8 +123,7 @@ print(centroids)
 #get distance from centroid to cluster elements
 #for each cluster (centroid)
 within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
-print(within_cluster_cluster_dist)
-
+between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 
 
 
