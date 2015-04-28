@@ -1,7 +1,7 @@
 require(popsom)
 
 
-get_centroids <- function(map, centroids){
+get_centroids <- function(map, coords){
 	xdim <- map$xdim
 	ydim <- map$ydim
 	xlist <- c()
@@ -11,8 +11,8 @@ get_centroids <- function(map, centroids){
 
 	for(ix in 1:xdim){
 		for(iy in 1:ydim) {
-			cx <- coords$xcoords[ix, iy]
-			cy <- coords$ycoords[ix, iy]
+			cx <- xcoords[ix, iy]
+			cy <- ycoords[ix, iy]
 			if(!(cx %in% xlist) || !(cy %in% ylist)){
 				xlist <- c(xlist,cx)
 				ylist <- c(ylist,cy)
@@ -69,10 +69,14 @@ cluster_spread <- function(x, y, heat, centroids, map){
 
 distance_between_clusters<-function(map, coords, centroids, umat){
 	cluster_elements<-list_clusters(map,coords,centroids,umat)
-	cluster_elements<- matrix(unlist(cluster_elements), ncol = length(cluster_elements), byrow = FALSE)
+	#print(length(cluster_elements))
+	cluster_elements<-sapply(cluster_elements,'[',seq(max(sapply(cluster_elements,length))))
+	#print(dim(cluster_elements))
+	cluster_elements<- matrix(unlist(cluster_elements), ncol = ncol(cluster_elements), byrow = FALSE)
+	#print (cluster_elements)
 	cluster_elements<- apply(combn(ncol(cluster_elements), 2), 2, function(x) abs(cluster_elements[,x[1]] - cluster_elements[,x[2]]))
-	print(colMeans(cluster_elements))
-
+	mean<-mean(colMeans(cluster_elements,na.rm=TRUE))
+	print(mean)
 }
 
 list_clusters<-function(map,coords,centroids,umat){
@@ -81,7 +85,7 @@ list_clusters<-function(map,coords,centroids,umat){
 	componentx <- coords$x
 	componenty <- coords$y
 	cluster_list <- list()
-	for(i in 1:length(centroids)){
+	for(i in 1:length(cent_x)){
 		cx <- cent_x[i]
 		cy <- cent_y[i]
 		cluster_list[i] <- list_from_centroid(cx,cy,coords,umat)
@@ -112,6 +116,18 @@ list_from_centroid <- function(x, y, components, heat){
 	list(cluster_list)
 }
 
+combine_decision <- function(within_cluster_dist,distance_between_clusters){
+	to_combine <- c()
+
+	for(i in 1:length(within_cluster_dist)){
+		if (within_cluster_dist[i] >distance_between_clusters){
+			to_combine[i]<-TRUE
+		}
+		else
+			to_combine[i]<-FALSE
+	}
+	print(to_combine)
+}
 
 data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
@@ -122,11 +138,12 @@ coords <- compute.internal.nodes(map,umat, explicit=FALSE)
 plot(coords$x,coords$y)
 #Get unique centroids
 centroids<-get_centroids(map, coords)
-#print(centroids)
+print(centroids)
 #get distance from centroid to cluster elements
 #for each cluster (centroid)
 within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
-between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
-
 print(within_cluster_dist)
+between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
+combine_cluster_bools <- combine_decision(within_cluster_dist,between_cluster_dist)
+
 	
