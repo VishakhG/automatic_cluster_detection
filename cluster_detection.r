@@ -69,9 +69,12 @@ cluster_spread <- function(x, y, heat, centroids, map){
 
 distance_between_clusters<-function(map, coords, centroids, umat){
 	cluster_elements<-list_clusters(map,coords,centroids,umat)
-	print(length(cluster_elements))
+	cluster_elements<- matrix(unlist(cluster_elements), ncol = length(cluster_elements), byrow = FALSE)
+	cluster_elements<- apply(combn(ncol(cluster_elements), 2), 2, function(x) abs(cluster_elements[,x[1]] - cluster_elements[,x[2]]))
+	print(colMeans(cluster_elements))
 
 }
+
 list_clusters<-function(map,coords,centroids,umat){
 	cent_x <- centroids$xvals
 	cent_y <- centroids$yvals
@@ -116,15 +119,14 @@ data <- data[0:3]
 map <- map.build(data,xdim=10, ydim=5, alpha=.6, train=100)
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map,umat, explicit=FALSE)
-#plot(coords$x,coords$y)
+plot(coords$x,coords$y)
 #Get unique centroids
 centroids<-get_centroids(map, coords)
-print(centroids)
+#print(centroids)
 #get distance from centroid to cluster elements
 #for each cluster (centroid)
 within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
 between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 
-
-
+print(within_cluster_dist)
 	
