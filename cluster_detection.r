@@ -69,14 +69,21 @@ cluster_spread <- function(x, y, heat, centroids, map){
 
 distance_between_clusters<-function(map, coords, centroids, umat){
 	cluster_elements<-list_clusters(map,coords,centroids,umat)
-	#print(length(cluster_elements))
 	cluster_elements<-sapply(cluster_elements,'[',seq(max(sapply(cluster_elements,length))))
-	#print(dim(cluster_elements))
+	columns<-ncol(cluster_elements)
 	cluster_elements<- matrix(unlist(cluster_elements), ncol = ncol(cluster_elements), byrow = FALSE)
-	#print (cluster_elements)
 	cluster_elements<- apply(combn(ncol(cluster_elements), 2), 2, function(x) abs(cluster_elements[,x[1]] - cluster_elements[,x[2]]))
-	mean<-mean(colMeans(cluster_elements,na.rm=TRUE))
-	print(mean)
+	mean<-colMeans(cluster_elements,na.rm=TRUE)
+	#print(mean)
+	index<-1
+	mat<--matrix(data=NA,nrow=columns,ncol=columns)
+	for(xi in 1:columns){
+		for (yi in xi:(columns-1)){
+			mat[xi,yi]<-mean[index]
+		    index<-index+1
+		}
+	}
+	mat
 }
 
 list_clusters<-function(map,coords,centroids,umat){
@@ -126,23 +133,22 @@ combine_decision <- function(within_cluster_dist,distance_between_clusters){
 		else
 			to_combine[i]<-FALSE
 	}
-	print(to_combine)
+	#print(to_combine)
 }
 
 data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
 data <- data[0:3]
-map <- map.build(data,xdim=10, ydim=5, alpha=.6, train=100)
+map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=10)
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map,umat, explicit=FALSE)
 plot(coords$x,coords$y)
 #Get unique centroids
 centroids<-get_centroids(map, coords)
-print(centroids)
 #get distance from centroid to cluster elements
 #for each cluster (centroid)
 within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
-print(within_cluster_dist)
+#print(within_cluster_dist)
 between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist,between_cluster_dist)
 
