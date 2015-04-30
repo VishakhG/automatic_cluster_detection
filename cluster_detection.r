@@ -288,8 +288,8 @@ data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
 data <- data[0:3]
 map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=100000)
+png(filename="old_starburst")
 map.starburst(map)
-x11()
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map, umat, explicit=FALSE)
 #Get unique centroids
@@ -301,4 +301,5 @@ between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
 print(combine_cluster_bools)
 new_centroid <- new_centroid(combine_cluster_bools,heat,coords,centroids,map)
+png(filename="new_starburst")
 plot_heat_mod(map,umat,new_centroid)
