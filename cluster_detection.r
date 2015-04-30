@@ -146,18 +146,60 @@ combine_decision <- function(within_cluster_dist, distance_between_clusters){
 			}
 		}
 	}
-	print(to_combine)
+	to_combine
 }
+swap_centroids <- function(x1,y1,x2,y2,components){
+	xdim <- components$x
+	ydim <- components$y
+	compn_x <- components$x
+	compn_y <- components$y
+	for(xi in 1:xdim){
+		for(yi in 1:ydim){
+			if(compn_x[xi] == x1 && compn_y[yi] == y1){
+				compn_x[xi] <- x2
+				compn_y[yi] <- y2
+			}
+		}
 
+	}
+	list(xcoords=compn_x,ycoords=compn_y)
+  
+}
+new_centroid <- function(bools,heat,components,centroids,map){
+	xdim <- dim(bools)[1]
+	print(xdim)
+	ydim <- dim(bools)[2]
+	centroids_x <- centroids$xvals
+	centroids_y <- centroids$yvals
+	components <- components
+	for(xi in 1:xdim){
+		for(yi in 1:ydim){
+			if(bools[xi,yi] == TRUE){
+				x1 <- centroids_x[xi]
+				y1 <- centroids_y[xi]
+				
+				x2 <- centroids_x[yi]
+				y2 <- centroids_y[yi]
+
+				components <- swap_centroids(x1,y1,x2,y2,components)
+				
+				
+			}
+		} 
+	}
+	plot(components$xcoords,components$ycoords)
+}	
+	
 
 ##TOP LEVEL##
 data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
 data <- data[0:3]
-map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=10000)
+map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=10)
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map, umat, explicit=FALSE)
 plot(coords$x,coords$y)
+x11()
 #Get unique centroids
 centroids<-get_centroids(map, coords)
 #get distance from centroid to cluster elements
@@ -165,5 +207,6 @@ centroids<-get_centroids(map, coords)
 within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
 between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
-
+print(combine_cluster_bools)
+new_centroid(combine_cluster_bools,heat,coords,centroids,map)
 	
