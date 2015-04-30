@@ -187,19 +187,111 @@ new_centroid <- function(bools,heat,components,centroids,map){
 			}
 		} 
 	}
-	plot(components$xcoords,components$ycoords)
+	
+	print(components)
 }	
 	
+plot_heat_mod <- function(map,heat,components,explicit=FALSE,comp=TRUE) {
+	components <- components
+	labels <- map$labels
+	if (is.null(labels))
+		stop("plot.heat: no labels available")
+
+	x <- map$xdim
+	y <- map$ydim
+	nobs <- nrow(map$data)
+	count <- array(data=0,dim=c(x,y))
+
+	# need to make sure the map doesn't have a dimension of 1
+	if (x > 1 && y > 1) {
+		# bin the heat values into 100 bins used for the 100 heat colors below
+		heat.v <- as.vector(heat)
+		heat.v <- cut(heat.v,breaks=100,labels=FALSE)
+		heat <- array(data=heat.v,dim=c(x,y))
+	}
+
+	# set up the graphics window
+	par.v <- map.graphics.set()
+	plot.new()
+	plot.window(xlim=c(0,x),ylim=c(0,y))
+	box()
+	
+	title(xlab="x",ylab="y")
+	
+	xticks <- seq(0.5,x-0.5,1)
+	yticks <- seq(0.5,y-0.5,1)
+	xlabels <- seq(1,x,1)
+	ylabels <- seq(1,y,1)
+	axis(1,at=xticks,labels=xlabels)
+	axis(3,at=xticks,labels=xlabels)
+	axis(2,at=yticks,labels=ylabels)
+	axis(4,at=yticks,labels=ylabels)
+		
+	# plot heat
+	colors<- heat.colors(100)
+	
+	for (ix in 1:x) {
+		for (iy in 1:y) {
+			rect(ix-1,iy-1,ix,iy,col=colors[100 - heat[ix,iy] + 1],border=NA)
+		}
+	}
+	
+	# put the connected component lines on the map
+	if (comp) {
+
+		# compute the connected components
+		coords <- components
+
+		for(ix in 1:x){
+			for (iy in 1:y) {
+				cx <- coords$xcoords[ix,iy]
+				cy <- coords$ycoords[ix,iy]
+				points(c(ix,cx)-.5,c(iy,cy)-.5,type="l",col="grey")
+			}
+		}
+	}
+
+	# put the labels on the map
+	# count the labels in each map cell
+	for(i in 1:nobs){
+		ix <- map$visual$x[i]
+		iy <- map$visual$y[i]
+		count[ix+1,iy+1] <- count[ix+1,iy+1]+1
+	}
+	
+	for(i in 1:nobs){
+		ix <- map$visual$x[i]
+		iy <- map$visual$y[i]
+		# we only print one label per cell
+		if (count[ix+1,iy+1] > 0) {
+			count[ix+1,iy+1] <- 0
+			ix <- ix + .5
+			iy <- iy + .5
+			l <- labels[i,1]
+			text(ix,iy,labels=l)
+		}
+	}
+
+	map.graphics.reset(par.v)
+}
+plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
+
+	if (class(map) != "map")
+		stop("map.starburst: first argument is not a map object.")
+
+	umat <- umat
+	plot_heat_mod(map,umat,components,explicit=explicit,comp=TRUE)
+}
 
 ##TOP LEVEL##
 data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
 data <- data[0:3]
-map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=10)
+map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=100000)
+map.starburst(map)
+x11()
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map, umat, explicit=FALSE)
-plot(coords$x,coords$y)
-x11()
 #Get unique centroids
 centroids<-get_centroids(map, coords)
 #get distance from centroid to cluster elements
@@ -208,5 +300,5 @@ within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
 between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
 print(combine_cluster_bools)
-new_centroid(combine_cluster_bools,heat,coords,centroids,map)
-	
+new_centroid <- new_centroid(combine_cluster_bools,heat,coords,centroids,map)
+plot_heat_mod(map,umat,new_centroid)
