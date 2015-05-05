@@ -144,7 +144,9 @@ combine_decision <- function(within_cluster_dist, distance_between_clusters){
 		for(yi in 1:dim){
 			cdist <- inter_cluster[xi,yi]
 			if(! is.na(cdist)){
-				if( cdist < centroid_dist[xi] || cdist < centroid_dist[yi]){
+				rx <- centroid_dist[xi]*(.1)
+				ry <- centroid_dist[yi]*(.1)
+				if( cdist < (centroid_dist[xi]+rx) || cdist < (centroid_dist[yi]+ry)){
 					to_combine[xi,yi] <- TRUE
 				}
 			}
@@ -194,6 +196,7 @@ new_centroid <- function(bools, heat, components, centroids, map){
 			}
 		} 
 	}
+	components
 }	
 ################## Modifications of POPSOM to evaluate clustering #############	
 
@@ -293,11 +296,13 @@ plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
 
 ####################  TOP LEVEL for testing ###########################
 data <- read.csv("iris.csv", header=TRUE)
-labels <- data[,3]
-data <- data[0:3]
-map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=100000)
-png(filename="old_starburst")
+labels <- data[,5]
+data <- data[0:4]
+map <- map.build(data,labels=labels,xdim=25, ydim=20, alpha=.6, train=100000)
+png(filename="old_starburst.png")
+#Plot Starburst without modification
 map.starburst(map)
+dev.off()
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map, umat, explicit=FALSE)
 #Get unique centroids
@@ -310,6 +315,7 @@ between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
 #Create the modified connected components grid
 new_centroid <- new_centroid(combine_cluster_bools,heat,coords,centroids,map)
-png(filename="new_starburst")
+png(filename="new_starburst.png")
 #Plot modified starburst
 plot_heat_mod(map,umat,new_centroid)
+dev.off()
