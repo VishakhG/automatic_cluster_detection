@@ -1,6 +1,9 @@
+#Author: Vishakh Gopu
+#An attempt to combine connected components in a Self organizing map 
+#If they represent the same cluster. 
 require(popsom)
 
-
+#Get the unique centroids
 get_centroids <- function(map, coords){
 	xdim <- map$xdim
 	ydim <- map$ydim
@@ -26,7 +29,7 @@ get_centroids <- function(map, coords){
 		list(xvals=xlist, yvals=ylist)
 }	
 
-
+#Get average distance from centroid by cluster
 distance_from_centroids <- function(map, centroids, id_centroids, heat){
 	xdim <- map$xdim
 	ydim <- map$ydim
@@ -42,7 +45,8 @@ distance_from_centroids <- function(map, centroids, id_centroids, heat){
 	within
 }
 
-
+#Function to calculate the average distance in
+#one cluster given one centroid
 cluster_spread <- function(x, y, heat, centroids, map){
 	centroidx <- x
 	centroidy <- y
@@ -67,31 +71,31 @@ cluster_spread <- function(x, y, heat, centroids, map){
 	average
 }
 
-
-distance_between_clusters<-function(map, coords, centroids, umat){
-	cluster_elements <- list_clusters(map,coords,centroids,umat)
+#The average pairwise distance between clusters
+distance_between_clusters <- function(map, coords, centroids, umat){
+	cluster_elements <- list_clusters(map, coords, centroids, umat)
 	cluster_elements <- sapply(cluster_elements,'[',
-							   seq(max(sapply(cluster_elements,length))))
+							   seq(max(sapply(cluster_elements, length))))
 	
 	columns<-ncol(cluster_elements)
 	cluster_elements <- matrix(unlist(cluster_elements), 
 		                       ncol = ncol(cluster_elements), byrow = FALSE)
 	cluster_elements <- apply(combn(ncol(cluster_elements), 2), 2, function(x)
-							  abs(cluster_elements[,x[1]] - cluster_elements[,x[2]]))
+							  abs(cluster_elements[, x[1]] - cluster_elements[, x[2]]))
 	mean <- colMeans(cluster_elements, na.rm=TRUE)
 	index <- 1
 	mat <- matrix(data=NA, nrow=columns, ncol=columns)
 	for(xi in 1:(columns-1)){
 		for (yi in xi:(columns-1)){
-			mat[xi,yi+1] <- mean[index]
-			mat[yi+1,xi] <- mean[index]
+			mat[xi, yi+1] <- mean[index]
+			mat[yi+1, xi] <- mean[index]
 		    index <- index+1
 		}
 	}
 	mat
 }
 
-
+#Get the clusters as a list of lists
 list_clusters <- function(map, coords, centroids, umat){
 	cent_x <- centroids$xvals
 	cent_y <- centroids$yvals
@@ -106,15 +110,15 @@ list_clusters <- function(map, coords, centroids, umat){
  cluster_list
 }
 
-
+#Get all cluster elements associated to one centroid
 list_from_centroid <- function(x, y, components, heat){
 	centroidx <- x
 	centroidy <- y
 	sum <- 0
 	xdim <- map$xdim
 	ydim <- map$ydim
-	centroid_weight <- heat[centroidx,centroidy]
-	cluster_list<-c()
+	centroid_weight <- heat[centroidx, centroidy]
+	cluster_list <- c()
 	for(xi in 1:xdim){
 		for(yi in 1:ydim){
 			cx <- components$x[xi,yi]
@@ -129,7 +133,7 @@ list_from_centroid <- function(x, y, components, heat){
 	list(cluster_list)
 }
 
-
+#Boolean matrix representing which clusters should be combined
 combine_decision <- function(within_cluster_dist, distance_between_clusters){
 	inter_cluster <- distance_between_clusters
 	centroid_dist <- within_cluster_dist
@@ -148,7 +152,9 @@ combine_decision <- function(within_cluster_dist, distance_between_clusters){
 	}
 	to_combine
 }
-swap_centroids <- function(x1,y1,x2,y2,components){
+
+#Changes every instance of a centroid to one that it should be combined with
+swap_centroids <- function(x1, y1, x2, y2, components){
 	xdim <- components$x
 	ydim <- components$y
 	compn_x <- components$x
@@ -162,10 +168,12 @@ swap_centroids <- function(x1,y1,x2,y2,components){
 		}
 
 	}
-	list(xcoords=compn_x,ycoords=compn_y)
-  
+	list(xcoords=compn_x, ycoords=compn_y)
 }
-new_centroid <- function(bools,heat,components,centroids,map){
+
+
+#Combine centroids based on matrix of booleans
+new_centroid <- function(bools, heat, components, centroids, map){
 	xdim <- dim(bools)[1]
 	print(xdim)
 	ydim <- dim(bools)[2]
@@ -181,17 +189,16 @@ new_centroid <- function(bools,heat,components,centroids,map){
 				x2 <- centroids_x[yi]
 				y2 <- centroids_y[yi]
 
-				components <- swap_centroids(x1,y1,x2,y2,components)
-				
+				components <- swap_centroids(x1, y1, x2, y2, components)
 				
 			}
 		} 
 	}
-	
-	print(components)
 }	
-	
-plot_heat_mod <- function(map,heat,components,explicit=FALSE,comp=TRUE) {
+################## Modifications of POPSOM to evaluate clustering #############	
+
+#Modifying the heatmap method to take the combined components
+plot_heat_mod <- function(map, heat, components, explicit=FALSE, comp=TRUE) {
 	components <- components
 	labels <- map$labels
 	if (is.null(labels))
@@ -206,8 +213,8 @@ plot_heat_mod <- function(map,heat,components,explicit=FALSE,comp=TRUE) {
 	if (x > 1 && y > 1) {
 		# bin the heat values into 100 bins used for the 100 heat colors below
 		heat.v <- as.vector(heat)
-		heat.v <- cut(heat.v,breaks=100,labels=FALSE)
-		heat <- array(data=heat.v,dim=c(x,y))
+		heat.v <- cut(heat.v, breaks=100, labels=FALSE)
+		heat <- array(data=heat.v, dim=c(x,y))
 	}
 
 	# set up the graphics window
@@ -274,6 +281,7 @@ plot_heat_mod <- function(map,heat,components,explicit=FALSE,comp=TRUE) {
 
 	map.graphics.reset(par.v)
 }
+#Modification of the starbust  function to plot modified conected components
 plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
 
 	if (class(map) != "map")
@@ -283,7 +291,7 @@ plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
 	plot_heat_mod(map,umat,components,explicit=explicit,comp=TRUE)
 }
 
-##TOP LEVEL##
+####################  TOP LEVEL for testing ###########################
 data <- read.csv("iris.csv", header=TRUE)
 labels <- data[,3]
 data <- data[0:3]
@@ -294,12 +302,14 @@ umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map, umat, explicit=FALSE)
 #Get unique centroids
 centroids<-get_centroids(map, coords)
-#get distance from centroid to cluster elements
-#for each cluster (centroid)
+#Get distance from centroid to cluster elements for all centroids
 within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
+#Get average pairwise distance between clusters
 between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
+#Get a boolean matrix of whether two components should be combined
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
-print(combine_cluster_bools)
+#Create the modified connected components grid
 new_centroid <- new_centroid(combine_cluster_bools,heat,coords,centroids,map)
 png(filename="new_starburst")
+#Plot modified starburst
 plot_heat_mod(map,umat,new_centroid)
