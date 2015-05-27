@@ -22,7 +22,6 @@ get_centroids <- function(map, coords){
     }
     plot(xcoords,ycoords)
     unique_list <- unique(cbind(xlist,ylist))
-    print(unique_list)
     xlist <- unique_list[,1]
     ylist <- unique_list[,2]
     list(xvals=xlist, yvals=ylist)
@@ -92,6 +91,38 @@ distance_between_clusters <- function(map, coords, centroids, umat){
         }
     }
     mat
+}
+
+minval <- function(x, mu1, mu2, sd1, sd2) {
+    f1 <- dnorm(x, mean=mu1, sd=sd1)
+    f2 <- dnorm(x, mean=mu2, sd=sd2)
+    pmin(f1, f2)
+}
+
+distribution_overlap <- function(map,coords,centroid,umat){
+    cluster_elements <- list_clusters(map,coords,centroids,umat)
+    columns<-length(cluster_elements)
+    mat <- matrix(data=NA, nrow=columns, ncol=columns)
+    for(xi in 1:(columns-1)){
+        for (yi in xi:(columns-1)){
+            clust1 <- xi
+            clust2 <- yi
+            mu1 <- mean(cluster_elements[[xi]])
+            mu2 <- mean(cluster_elements[[yi]])
+            sd1 <- sd(cluster_elements[[xi]])
+            sd2 <- sd(cluster_elements[[yi]])
+            overlap <- integrate(minval, -Inf, Inf, mu1=mu1, mu2=mu2, 
+                sd1=sd1, sd2=sd2)
+            print(xi)
+            print(yi)
+            print(mat[xi+1,yi])
+
+            mat[xi, yi+1] <- overlap[[1]]
+            mat[yi+1, xi] <- overlap[[1]]
+            
+        }
+    }
+    print(mat)
 }
 
 #Get the clusters as a list of lists
@@ -176,7 +207,6 @@ swap_centroids <- function(x1, y1, x2, y2, components){
 #Combine centroids based on matrix of booleans
 new_centroid <- function(bools, heat, components, centroids, map){
     xdim <- dim(bools)[1]
-    print(xdim)
     ydim <- dim(bools)[2]
     centroids_x <- centroids$xvals
     centroids_y <- centroids$yvals
@@ -297,7 +327,7 @@ plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
 data <- read.csv("iris.csv", header=TRUE)
 #labels <- data[,5]
 data <- data[0:4]
-map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=100000)
+map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=1)
 png(filename="old_starburst.png")
 #Plot Starburst without modification
 map.starburst(map)
@@ -311,6 +341,7 @@ within_cluster_dist <- distance_from_centroids(map, coords, centroids,umat)
 #Get average pairwise distance between clusters
 between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 #Get a boolean matrix of whether two components should be combined
+distribution_overlap(map,coords,centroids,umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
 #Create the modified connected components grid
 new_centroid <- new_centroid(combine_cluster_bools, heat,coords, centroids,map)
