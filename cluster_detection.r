@@ -191,7 +191,7 @@ combine_decision2 <- function(distribution_overlap_mat){
         for(yi in 1:dim){
             overlap <- overlap_mat[xi,yi]
             if(! is.na(overlap)){
-                if(overlap > .5){
+                if(overlap > .2){
                     to_combine[xi,yi] <- TRUE
                 }
             }
@@ -341,12 +341,14 @@ plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
 data <- read.csv("iris.csv", header=TRUE)
 #labels <- data[,5]
 data <- data[0:4]
-map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=100000)
+map <- map.build(data,xdim=25, ydim=20, alpha=.6, train=10)
 print(map.convergence(map))
 png(filename="old_starburst.png")
 #Plot Starburst without modification
 map.starburst(map)
 dev.off()
+
+
 umat <- compute.umat(map, smoothing=2)
 coords <- compute.internal.nodes(map, umat, explicit=FALSE)
 #Get unique centroids
@@ -360,8 +362,10 @@ overlap_mat <- distribution_overlap(map,coords,centroids,umat)
 #combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
 combine_cluster_bools<- combine_decision2(overlap_mat)
 #Create the modified connected components grid
-new_centroid <- new_centroid(combine_cluster_bools, umat,coords, centroids,map)
+new_centroids <- new_centroid(combine_cluster_bools, umat,coords, centroids,map)
+
+
 png(filename="new_starburst.png")
 #Plot modified starburst
-plot_heat_mod(map, umat, new_centroid)
+plot_heat_mod(map, umat, new_centroids)
 dev.off()
