@@ -157,8 +157,8 @@ combine_decision <- function(within_cluster_dist, distance_between_clusters){
 
 #Changes every instance of a centroid to one that it should be combined with
 swap_centroids <- function(x1, y1, x2, y2, components){
-	xdim <- components$x
-	ydim <- components$y
+	xdim <- map$xdim
+	ydim <- map$ydim
 	compn_x <- components$x
 	compn_y <- components$y
 	for(xi in 1:xdim){
@@ -295,11 +295,11 @@ plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
 }
 
 ####################  TOP LEVEL for testing ###########################
-data <- read.csv("iris.csv", header=TRUE)
+data <- read.csv("/Users/Vishakh/Desktop/Projects/Cluster_detection/iris.csv", header=TRUE)
 labels <- data[,5]
 data <- data[0:4]
 map <- map.build(data,labels=labels,xdim=25, ydim=20, alpha=.6, train=100000)
-png(filename="old_starburst.png")
+png(filename="/Users/Vishakh/Desktop/Projects/Cluster_detection/old_starburst.png")
 #Plot Starburst without modification
 map.starburst(map)
 dev.off()
@@ -315,7 +315,7 @@ between_cluster_dist <- distance_between_clusters(map, coords, centroids, umat)
 combine_cluster_bools <- combine_decision(within_cluster_dist, between_cluster_dist)
 #Create the modified connected components grid
 new_centroid <- new_centroid(combine_cluster_bools,heat,coords,centroids,map)
-png(filename="new_starburst.png")
+png(filename="/Users/Vishakh/Desktop/Projects/Cluster_detection/new_starburst.png")
 #Plot modified starburst
 plot_heat_mod(map,umat,new_centroid)
 dev.off()
