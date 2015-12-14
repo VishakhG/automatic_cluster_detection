@@ -285,7 +285,7 @@ plot_heat_mod <- function(map, heat, components, explicit=FALSE, comp=TRUE) {
 	map.graphics.reset(par.v)
 }
 #Modification of the starbust  function to plot modified conected components
-plot_starburst_mod <- function(map,umat,components,explicit=FALSE,smoothing=2) {
+plot_starburst_mod <- function(map, umat, components, explicit=FALSE, smoothing=2) {
 
 	if (class(map) != "map")
 		stop("map.starburst: first argument is not a map object.")
